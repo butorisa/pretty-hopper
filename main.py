@@ -1,4 +1,13 @@
 import pyxel
+from enum import Enum, auto
+
+
+class GameMode(Enum):
+    """ 画面一覧 """
+    # 町
+    Town = auto()
+    # 家の中
+    Home = auto()
 
 
 class PrettyHopper:
@@ -11,6 +20,8 @@ class PrettyHopper:
         # 家初期化
         self.home = MyHome()
         pyxel.load('image/pretty-hopper.pyxres')
+        # 町からスタート
+        self.game_mode = GameMode.Town
         pyxel.run(self.update, self.draw)
 
     def update(self):
@@ -24,16 +35,28 @@ class PrettyHopper:
 
     def draw(self):
         """ 画面描画 """
+        if self.game_mode == GameMode.Town:
+            self.draw_town()
+        elif self.game_mode == GameMode.Home:
+            self.draw_home()
+
+    def draw_town(self):
+        """ 町を描画 """
         # 背景
         pyxel.cls(7)
         pyxel.bltm(0, 0, 0, 0, 0, 16, 16)
-        # 家描画
+        # 家
         pyxel.blt(self.home.position[0], self.home.position[1], 0, 16, 0, 16, 16, 5)
         # うさぎ
         pyxel.blt(40, 80, 0, 48, 0, 16, 16, 5)
-        # プレイヤー描画
+        # プレイヤー
         if self.player.active:
             pyxel.blt(self.player.position[0], self.player.position[1], 0, 0, 0, 16, 16, 5)
+
+    def draw_home(self):
+        """ 家の中を描画 """
+        pyxel.cls(7)
+        pyxel.bltm(0, 0, 0, 16, 0, 16, 16)
 
     def switch_active(self, obj, target):
         """ オブジェクトが重なったら一方を非表示にする """
@@ -41,12 +64,11 @@ class PrettyHopper:
                 and abs(obj.position[1] - target.position[1]) < 10:
             obj.active = False
             # ロード画面
-            pyxel.cls(7)
-            # pyxel.bltm(0, 0, 2, 0, 0, 16, 16)
+            self.game_mode = GameMode.Home
         else:
             obj.active = True
             # ゲーム画面
-            # pyxel.bltm(0, 0, 0, 0, 0, 16, 16)
+            self.game_mode = GameMode.Town
 
 
 class Player:
