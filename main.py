@@ -19,7 +19,7 @@ class PrettyHopper:
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
 
-        self.player.action()
+        self.player.move()
         self.switch_active(self.player, self.home)
 
     def draw(self):
@@ -27,45 +27,50 @@ class PrettyHopper:
         # 背景
         pyxel.cls(7)
         pyxel.bltm(0, 0, 0, 0, 0, 16, 16)
-        # プレイヤー描画
-        if self.player.active:
-            pyxel.blt(self.player.position[0], self.player.position[1], 0, 0, 0, 16, 16, 5)
         # 家描画
         pyxel.blt(self.home.position[0], self.home.position[1], 0, 16, 0, 16, 16, 5)
         # うさぎ
-        pyxel.blt(16, 24, 0, 48, 0, 16, 16, 5)
+        pyxel.blt(40, 80, 0, 48, 0, 16, 16, 5)
+        # プレイヤー描画
+        if self.player.active:
+            pyxel.blt(self.player.position[0], self.player.position[1], 0, 0, 0, 16, 16, 5)
 
     def switch_active(self, obj, target):
         """ オブジェクトが重なったら一方を非表示にする """
-        if abs(obj.position[0] - target.position[0]) < 15\
-                and abs(obj.position[1] - target.position[1]) < 15:
+        if abs(obj.position[0] - target.position[0]) < 10\
+                and abs(obj.position[1] - target.position[1]) < 10:
             obj.active = False
+            # ロード画面
+            pyxel.cls(7)
+            # pyxel.bltm(0, 0, 2, 0, 0, 16, 16)
         else:
             obj.active = True
+            # ゲーム画面
+            # pyxel.bltm(0, 0, 0, 0, 0, 16, 16)
 
 
 class Player:
     """ プレイヤーのコントロール """
     def __init__(self):
         self.active = True
-        self.position = [48, 47]
+        self.position = [8, 104]
 
-    def action(self):
+    def move(self):
         """ プレイヤー移動 """
         if pyxel.btnp(pyxel.KEY_LEFT) and self.position[0] > 0:
             self.position[0] -= 10
-        if pyxel.btnp(pyxel.KEY_RIGHT) and self.position[0] < 110:
+        if pyxel.btnp(pyxel.KEY_RIGHT) and self.position[0] < 105:
             self.position[0] += 10
-        if pyxel.btnp(pyxel.KEY_UP) and self.position[1] > 0:
+        if pyxel.btnp(pyxel.KEY_UP) and self.position[1] > 10:
             self.position[1] -= 10
-        if pyxel.btnp(pyxel.KEY_DOWN) and self.position[1] < 110:
+        if pyxel.btnp(pyxel.KEY_DOWN) and self.position[1] < 105:
             self.position[1] += 10
 
 
 class MyHome:
     """ 家オブジェクト """
     def __init__(self):
-        self.position = [32, 1]
+        self.position = [88, 72]
 
 
 PrettyHopper()
