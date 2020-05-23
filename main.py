@@ -15,13 +15,13 @@ class PrettyHopper:
     def __init__(self):
         """ 初期化 """
         pyxel.init(128, 128, caption='pretty hopper')
-        # プレイヤー初期化
-        self.player = Player()
-        # 家初期化
-        self.home = MyHome()
         pyxel.load('image/pretty-hopper.pyxres')
+        self.player = Player()
+        self.home = MyHome()
         # 町からスタート
         self.game_mode = GameMode.Town
+        # 画像の点滅表示に使用
+        self.flip = False
         pyxel.run(self.update, self.draw)
 
     def update(self):
@@ -38,7 +38,8 @@ class PrettyHopper:
         if self.game_mode == GameMode.Town:
             self.draw_town()
         elif self.game_mode == GameMode.Home:
-            self.draw_home()
+            self.draw_loading()
+            # self.draw_home()
 
     def draw_town(self):
         """ 町を描画 """
@@ -55,8 +56,23 @@ class PrettyHopper:
 
     def draw_home(self):
         """ 家の中を描画 """
+        pass
+
+    def draw_loading(self):
+        """ ロード画面を描画 """
+        # ウサギがジャンプする画像を表示
+        if self.flip:
+            tm_x = 32
+            tm_y = 0
+        else:
+            tm_x = 16
+            tm_y = 0
+
         pyxel.cls(7)
-        pyxel.bltm(0, 0, 0, 16, 0, 16, 16)
+        pyxel.bltm(0, 0, 0, tm_x, tm_y, 16, 16)
+
+        if pyxel.frame_count % 15 == 0:
+            self.flip = not self.flip
 
     def switch_active(self, obj, target):
         """ オブジェクトが重なったら一方を非表示にする """
