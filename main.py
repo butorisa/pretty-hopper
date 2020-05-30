@@ -18,10 +18,7 @@ class PrettyHopper:
         self.start_frame = pyxel.frame_count
         self.player = Player()
         self.office = Office()
-        # オブジェクト
-        self.duke = [(i * 60, randint(0, 104)) for i in range(4)]
-        self.python = [(i * 60, randint(0, 104)) for i in range(4)]
-        self.ruby = [(i * 60, randint(0, 104)) for i in range(4)]
+        self.skill = self.create_skill()
         # 町からスタート
         self.game_mode = GameMode.Town
         # 画像の点滅表示に使用
@@ -40,12 +37,9 @@ class PrettyHopper:
             self.switch_active(self.player, self.office)
 
         if self.game_mode == GameMode.Office:
-            for i, v in enumerate(self.duke):
-                self.duke[i] = self.update_object(*v)
-            for i, v in enumerate(self.python):
-                self.python[i] = self.update_object(*v)
-            for i, v in enumerate(self.ruby):
-                self.ruby[i] = self.update_object(*v)
+            for enum in self.skill:
+                for i, v in enumerate(enum.position):
+                    enum.position[i] = self.update_object(*v)
 
     def draw(self):
         """ 画面描画 """
@@ -74,14 +68,16 @@ class PrettyHopper:
         pyxel.bltm(0, 0, 0, 48, 0, 16, 16)
 
         # オブジェクト
-        for x, y in self.duke:
-            pyxel.blt(x, y, 0, 32, 80, 16, 16, 5)
-        for x, y in self.python:
-            pyxel.blt(x, y, 0, 48, 80, 16, 16, 5)
-        for x, y in self.ruby:
-            pyxel.blt(x, y, 0, 0, 96, 16, 16, 5)
+        self.draw_object()
         # プレイヤー
         pyxel.blt(self.player.position[0], self.player.position[1], 0, 0, 0, 16, 16, 5)
+
+    def draw_object(self):
+        """ 流れてくるオブジェクトを描画 """
+        for enum in self.skill:
+            u, v = enum.get_image(enum.name)
+            for x, y in enum.position:
+                pyxel.blt(x, y, 0, u, v, 16, 16, 5)
 
     def draw_loading(self):
         """ ロード画面を描画 """
@@ -108,10 +104,6 @@ class PrettyHopper:
             self.game_mode = GameMode.Office
             # フレーム数を保持
             self.start_frame = pyxel.frame_count
-        # else:
-        #     obj.active = True
-        #     # ゲーム画面
-        #     self.game_mode = GameMode.Town
 
     def update_object(self, x, y):
         """ オブジェクトのアニメーション """
@@ -119,16 +111,20 @@ class PrettyHopper:
             # is_active = False
             # self.score += 100
             # self.player_vy = min(self.player_vy, -8)
-            pyxel.play(3, 4)
-
+            pass
         x -= 2
-
         if x < -40:
             x += 240
             y = randint(0, 104)
             # is_active = True
 
-        return (x, y)
+        return x, y
+
+    def create_skill(self):
+        """ skillオブジェクト生成 """
+        num = len([obj.name for obj in Skill])
+        skills = [Skill(i) for i in range(1, num + 1)]
+        return skills
 
 
 class Player:
@@ -150,9 +146,27 @@ class Player:
 
 
 class Office:
-    """ 家オブジェクト """
+    """ 会社オブジェクト """
     def __init__(self):
         self.position = [96, 64]
+
+
+class Skill(Enum):
+    """ 画面に流れるオブジェクト """
+    Java = auto()
+    Python = auto()
+    Ruby = auto()
+
+    def __init__(self, num):
+        self.position = [(i * 60, randint(0, 104)) for i in range(4)]
+
+    def get_image(self, enum):
+        if enum == 'Java':
+            return 32, 80
+        elif enum == 'Python':
+            return 48, 80
+        elif enum == 'Ruby':
+            return 0, 96
 
 
 PrettyHopper()
