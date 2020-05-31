@@ -16,6 +16,7 @@ class PrettyHopper:
         pyxel.init(128, 128, caption='pretty hopper')
         pyxel.load('image/pretty-hopper.pyxres')
         self.start_frame = pyxel.frame_count
+        self.score = 0
         self.player = Player()
         self.office = Office()
         self.skill = self.create_skill()
@@ -34,22 +35,29 @@ class PrettyHopper:
         self.player.move()
 
         if self.game_mode == GameMode.Town:
-            self.switch_active(self.player, self.office)
+            self.player.active = self.switch_active(*self.player.position, *self.office.position, True)
+            if not self.player.active:
+                # ロード画面
+                self.game_mode = GameMode.Office
+                # フレーム数を保持
+                self.start_frame = pyxel.frame_count
 
         if self.game_mode == GameMode.Office:
             for enum in self.skill:
-                for i, v in enumerate(enum.position):
-                    enum.position[i] = self.update_object(*v)
+                if enum.active:
+                    for i, v in enumerate(enum.position):
+                        enum.position[i] = self.update_object(*v, enum.active)
+                        enum.active = self.switch_active(*enum.position[i], *self.player.position, enum.active)
 
     def draw(self):
         """ 画面描画 """
         if self.game_mode == GameMode.Town:
             self.draw_town()
         elif self.game_mode == GameMode.Office:
-            self.draw_loading()
-            # ローディング画面表示終了
-            if (pyxel.frame_count - self.start_frame) > 90:
-                self.draw_office()
+            # self.draw_loading()
+            # # ローディング画面表示終了
+            # if (pyxel.frame_count - self.start_frame) > 90:
+            self.draw_office()
 
     def draw_town(self):
         """ 町を描画 """
@@ -58,15 +66,19 @@ class PrettyHopper:
         pyxel.bltm(0, 0, 0, 0, 0, 16, 16)
         # オフィス
         pyxel.blt(self.office.position[0], self.office.position[1], 0, 16, 0, 16, 16, 5)
+        # startアイコン
+        self.draw_start()
         # プレイヤー
         if self.player.active:
             pyxel.blt(self.player.position[0], self.player.position[1], 0, 0, 0, 16, 16, 5)
+
+        self.flash_object()
 
     def draw_office(self):
         """ ゲーム画面を描画 """
         pyxel.cls(7)
         pyxel.bltm(0, 0, 0, 48, 0, 16, 16)
-
+        pyxel.text(5, 5, str(self.score), 14)
         # オブジェクト
         self.draw_object()
         # プレイヤー
@@ -75,9 +87,20 @@ class PrettyHopper:
     def draw_object(self):
         """ 流れてくるオブジェクトを描画 """
         for enum in self.skill:
-            u, v = enum.get_image(enum.name)
-            for x, y in enum.position:
-                pyxel.blt(x, y, 0, u, v, 16, 16, 5)
+            if enum.active:
+                u, v = enum.get_image(enum.name)
+                for x, y in enum.position:
+                    pyxel.blt(x, y, 0, u, v, 16, 16, 5)
+
+    def draw_start(self):
+        """ startアイコン """
+        if self.flip:
+            u = 16
+            v = 16
+        else:
+            u = 32
+            v = 16
+        pyxel.blt(self.office.position[0], self.office.position[1] - 16, 0, u, v, 16, 16, 5)
 
     def draw_loading(self):
         """ ロード画面を描画 """
@@ -91,34 +114,34 @@ class PrettyHopper:
 
         pyxel.cls(7)
         pyxel.bltm(0, 0, 0, tm_x, tm_y, 16, 16)
+        self.flash_object()
 
+    def flash_object(self):
+        """ 点滅フラグON/OFF """
         if pyxel.frame_count % 15 == 0:
             self.flip = not self.flip
 
-    def switch_active(self, obj, target):
+    def switch_active(self, obj_x, obj_y, target_x, target_y, is_activate):
         """ オブジェクトが重なったら一方を非表示にする """
-        if abs(obj.position[0] - target.position[0]) < 10\
-                and abs(obj.position[1] - target.position[1]) < 10:
-            obj.active = False
-            # ロード画面
-            self.game_mode = GameMode.Office
-            # フレーム数を保持
-            self.start_frame = pyxel.frame_count
+        if is_activate\
+                and abs(obj_x - target_x) < 10 and abs(obj_y - target_y) < 10:
+            if self.game_mode == GameMode.Town:
+                self.player.position = [8, 104]
+            elif self.game_mode == GameMode.Office:
+                self.score += 10
+            return False
+        else:
+            return True
 
-    def update_object(self, x, y):
+    def update_object(self, x, y, is_activate):
         """ オブジェクトのアニメーション """
-        if abs(x - self.player.position[0]) < 12 and abs(y - self.player.position[1]) < 12:
-            # is_active = False
-            # self.score += 100
-            # self.player_vy = min(self.player_vy, -8)
-            pass
         x -= 2
         if x < -40:
             x += 240
             y = randint(0, 104)
-            # is_active = True
 
-        return x, y
+
+        return [x, y]
 
     def create_skill(self):
         """ skillオブジェクト生成 """
@@ -158,9 +181,11 @@ class Skill(Enum):
     Ruby = auto()
 
     def __init__(self, num):
+        self.active = True
         self.position = [(i * 60, randint(0, 104)) for i in range(4)]
 
     def get_image(self, enum):
+        """ イメージバンクから切り出す座標を返す """
         if enum == 'Java':
             return 32, 80
         elif enum == 'Python':
