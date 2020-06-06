@@ -44,10 +44,8 @@ class PrettyHopper:
 
         if self.game_mode == GameMode.Office:
             for enum in self.skill:
-                if enum.active:
-                    for i, v in enumerate(enum.position):
-                        enum.position[i] = self.update_object(*v, enum.active)
-                        enum.active = self.switch_active(*enum.position[i], *self.player.position, enum.active)
+                for i, v in enumerate(enum.state):
+                    enum.state[i] = self.update_object(*v)
 
     def draw(self):
         """ 画面描画 """
@@ -74,6 +72,7 @@ class PrettyHopper:
 
         self.flash_object()
 
+
     def draw_office(self):
         """ ゲーム画面を描画 """
         pyxel.cls(7)
@@ -87,10 +86,10 @@ class PrettyHopper:
     def draw_object(self):
         """ 流れてくるオブジェクトを描画 """
         for enum in self.skill:
-            if enum.active:
                 u, v = enum.get_image(enum.name)
-                for x, y in enum.position:
-                    pyxel.blt(x, y, 0, u, v, 16, 16, 5)
+                for x, y, is_active in enum.state:
+                    if is_active:
+                        pyxel.blt(x, y, 0, u, v, 16, 16, 5)
 
     def draw_start(self):
         """ startアイコン """
@@ -123,8 +122,10 @@ class PrettyHopper:
 
     def switch_active(self, obj_x, obj_y, target_x, target_y, is_activate):
         """ オブジェクトが重なったら一方を非表示にする """
-        if is_activate\
-                and abs(obj_x - target_x) < 10 and abs(obj_y - target_y) < 10:
+        if not is_activate:
+            return False
+
+        if abs(obj_x - target_x) < 10 and abs(obj_y - target_y) < 10:
             if self.game_mode == GameMode.Town:
                 self.player.position = [8, 104]
             elif self.game_mode == GameMode.Office:
@@ -135,13 +136,16 @@ class PrettyHopper:
 
     def update_object(self, x, y, is_activate):
         """ オブジェクトのアニメーション """
+        active = self.switch_active(x, y, self.player.position[0], self.player.position[1], is_activate)
+
         x -= 2
+        # 左端を過ぎたらまた右から流れるようにする
         if x < -40:
             x += 240
             y = randint(0, 104)
+            active = True
 
-
-        return [x, y]
+        return x, y, active
 
     def create_skill(self):
         """ skillオブジェクト生成 """
@@ -181,8 +185,8 @@ class Skill(Enum):
     Ruby = auto()
 
     def __init__(self, num):
-        self.active = True
-        self.position = [(i * 60, randint(0, 104)) for i in range(4)]
+        # [x, y, is_active]
+        self.state = [(i * 60, randint(0, 104), True) for i in range(4)]
 
     def get_image(self, enum):
         """ イメージバンクから切り出す座標を返す """
@@ -195,3 +199,4 @@ class Skill(Enum):
 
 
 PrettyHopper()
+
